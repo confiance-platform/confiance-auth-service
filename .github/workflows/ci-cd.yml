@@ -10,7 +10,7 @@ on:
 env:
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
   SERVICE_NAME: auth-service
-  JAVA_VERSION: '17'
+  JAVA_VERSION: '21'
 
 jobs:
   build-and-test:
