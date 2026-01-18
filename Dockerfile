@@ -1,5 +1,5 @@
 # Spring Boot Auth Service Docker Image
-FROM amazoncorretto:17-alpine3.19
+FROM amazoncorretto:21-alpine3.19
 
 WORKDIR /app
 
