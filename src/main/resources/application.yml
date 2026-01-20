@@ -7,7 +7,7 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://${MYSQL_HOST:localhost}:3306/confiance_auth?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true}
     username: ${SPRING_DATASOURCE_USERNAME:root}
-    password: ${SPRING_DATASOURCE_PASSWORD:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:Confiance@2026!Secure}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -37,6 +37,14 @@ jwt:
   secret: ${JWT_SECRET:confianceSecretKeyForJWTTokenGenerationAndValidation2024}
   expiration: ${JWT_EXPIRATION:86400000}
   refresh-expiration: 604800000
+
+password:
+  reset:
+    token:
+      expiry-hours: ${PASSWORD_RESET_EXPIRY_HOURS:24}
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
 
 management:
   endpoints:

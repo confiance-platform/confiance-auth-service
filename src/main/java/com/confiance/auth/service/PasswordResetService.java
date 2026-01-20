@@ -35,6 +35,9 @@ public class PasswordResetService {
     @Value("${password.reset.token.expiry-hours:24}")
     private int tokenExpiryHours;
 
+    @Value("${app.frontend-url:http://localhost:3000}")
+    private String frontendUrl;
+
     @Transactional
     public void initiatePasswordReset(ForgotPasswordRequest request) {
         String email = request.getEmail().toLowerCase().trim();
@@ -127,32 +130,18 @@ public class PasswordResetService {
 
     private UserInfo findUserByEmail(String email) {
         try {
-            String url = "http://user-service/api/v1/users?email=" + email;
-            ResponseEntity<ApiResponse<Object>> response = restTemplate.exchange(
-                    url,
+            String userByEmailUrl = "http://user-service/api/v1/users/by-email?email=" + email;
+            ResponseEntity<ApiResponse<UserInfo>> userResponse = restTemplate.exchange(
+                    userByEmailUrl,
                     HttpMethod.GET,
                     null,
-                    new ParameterizedTypeReference<ApiResponse<Object>>() {}
+                    new ParameterizedTypeReference<ApiResponse<UserInfo>>() {}
             );
-
-            // Try to get user by email - this is a simplified approach
-            // In production, you'd have a dedicated endpoint for this
-            String userByEmailUrl = "http://user-service/api/v1/users/by-email?email=" + email;
-            try {
-                ResponseEntity<ApiResponse<UserInfo>> userResponse = restTemplate.exchange(
-                        userByEmailUrl,
-                        HttpMethod.GET,
-                        null,
-                        new ParameterizedTypeReference<ApiResponse<UserInfo>>() {}
-                );
-                if (userResponse.getBody() != null && userResponse.getBody().isSuccess()) {
-                    return userResponse.getBody().getData();
-                }
-            } catch (Exception e) {
-                log.debug("User not found by email endpoint, email: {}", email);
+            if (userResponse.getBody() != null && userResponse.getBody().isSuccess()) {
+                return userResponse.getBody().getData();
             }
         } catch (Exception e) {
-            log.error("Error finding user by email: {}", e.getMessage());
+            log.debug("User not found by email: {}", email);
         }
         return null;
     }
@@ -188,16 +177,19 @@ public class PasswordResetService {
     private void sendPasswordResetEmail(String email, String token, String firstName) {
         try {
             String url = "http://notification-service/api/v1/notifications/send-email";
+            String resetLink = frontendUrl + "/reset-password?token=" + token;
+
             Map<String, Object> emailRequest = Map.of(
                     "to", email,
                     "subject", "Password Reset Request - Confiance",
                     "templateName", "password-reset",
-                    "variables", Map.of(
+                    "templateVariables", Map.of(
                             "firstName", firstName != null ? firstName : "User",
                             "resetToken", token,
-                            "resetLink", "${FRONTEND_URL}/reset-password?token=" + token,
-                            "expiryHours", tokenExpiryHours
-                    )
+                            "resetLink", resetLink,
+                            "expiryHours", String.valueOf(tokenExpiryHours)
+                    ),
+                    "isHtml", true
             );
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(emailRequest);
 
@@ -209,7 +201,7 @@ public class PasswordResetService {
             );
             log.info("Password reset email sent to: {}", email);
         } catch (Exception e) {
-            log.error("Failed to send password reset email: {}", e.getMessage());
+            log.error("Failed to send password reset email: {}", e.getMessage(), e);
             // Don't throw - we still want the token to be created even if email fails
         }
     }
