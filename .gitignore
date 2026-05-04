@@ -6,3 +6,7 @@ target/
 *.log
 .env
 application-local.yml
+
+# macOS resource forks (added by automated cleanup)
+.DS_Store
+._*
